@@ -16,10 +16,10 @@ producer = KafkaProducer(
     value_serializer=lambda v: json.dumps(v).encode('utf-8')
 )
 
-def fetch_case_details(cursor, employee_id):
-    """Queries the database to get the full details for a given case_id."""
+def fetch_employee_details(cursor, employee_id):
+    """Queries the database to get the full details for a given employee_id."""
     try:
-        cursor.execute("SELECT * FROM social_care_cases WHERE case_id = %s;", (employee_id,))
+        cursor.execute("SELECT * FROM employees WHERE employee_id = %s;", (employee_id,))
         # Fetch column names from the cursor description
         colnames = [desc[0] for desc in cursor.description]
         row = cursor.fetchone()
@@ -27,7 +27,7 @@ def fetch_case_details(cursor, employee_id):
             # Return data as a dictionary
             return dict(zip(colnames, row))
     except Exception as e:
-        print(f"Error fetching details for case_id {employee_id}: {e}")
+        print(f"Error fetching details for employee_id {employee_id}: {e}")
     return None
 
 def main():
@@ -35,8 +35,8 @@ def main():
     conn.set_isolation_level(psycopg2.extensions.ISOLATION_LEVEL_AUTOCOMMIT)
     cursor = conn.cursor()
 
-    # Start listening on the 'case_changes' channel
-    cursor.execute("LISTEN case_changes;")
+    # Start listening on the 'employee_changes' channel
+    cursor.execute("LISTEN employee_changes;")
     print("Listener started. Waiting for notifications...")
 
     while True:
@@ -65,7 +65,7 @@ def main():
             # In a real system, the trigger payload might include the full OLD row.
             if operation != 'DELETE':
                 # Callback to the DB to get the full row data
-                full_row_data = fetch_case_details(cursor, employee_id)
+                full_row_data = fetch_employee_details(cursor, employee_id)
                 event_data['data'] = full_row_data
             else:
                 # For DELETE, we only know the ID

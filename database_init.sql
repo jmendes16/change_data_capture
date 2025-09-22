@@ -26,7 +26,7 @@ BEGIN
                           'employee_id', NEW.employee_id);
     END IF;
 
-    -- Send the notification on the 'case_changes' channel.
+    -- Send the notification on the 'employee_changes' channel.
     -- The second argument is the payload string.
     PERFORM pg_notify('employee_changes', notification::text);
 
@@ -41,4 +41,7 @@ AFTER INSERT OR UPDATE OR DELETE ON employees
 FOR EACH ROW EXECUTE FUNCTION notify_employees_changes();
 
 CREATE USER engineer WITH PASSWORD 'engie_pass';
+-- only need connect permissions to perform the LISTEN action
 GRANT CONNECT ON DATABASE cdc_db TO engineer;
+-- app logic also requires a SELECT statement as well
+GRANT SELECT ON TABLE employees TO engineer;
