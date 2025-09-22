@@ -18,7 +18,7 @@ BEGIN
         -- For DELETE, use the OLD data's ID
         notification = json_build_object(
                           'operation', TG_OP,
-                          'case_id', OLD.employee_id);
+                          'employee_id', OLD.employee_id);
     ELSE
         -- For INSERT or UPDATE, use the NEW data's ID
         notification = json_build_object(
