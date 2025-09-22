@@ -6,10 +6,8 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: cdc_db
-    # ports:
-    #   - "5432:5432"
     volumes:
-      - ./create_tables.sql:/docker-entrypoint-initdb.d/create_tables.sql
+      - ./database_init.sql:/docker-entrypoint-initdb.d/database_init.sql
     networks:
       - postgres-net
 
@@ -24,5 +22,45 @@ services:
     networks:
       - postgres-net
 
+  zookeeper:
+      image: wurstmeister/zookeeper:latest
+      platform: linux/amd64
+      container_name: zookeeper
+      ports:
+      - "2181:2181"
+      networks:
+        - postgres-net
+
+  kafka:
+    image: wurstmeister/kafka:latest
+    container_name: kafka
+    depends_on:
+      - zookeeper
+    environment:
+      - KAFKA_BROKER_ID=1
+      - KAFKA_ZOOKEEPER_CONNECT=zookeeper:2181
+      - KAFKA_ADVERTISED_LISTENERS=PLAINTEXT://kafka:9092
+      - KAFKA_LISTENERS=PLAINTEXT://0.0.0.0:9092
+      - KAFKA_LISTENER_SECURITY_PROTOCOL_MAP=PLAINTEXT:PLAINTEXT
+      - KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR=1
+    ports:
+      - "9092:9092"
+    networks:
+      - postgres-net
+    healthcheck:
+      test: ["CMD", "nc", "-z", "localhost", "9092"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  python-app:
+    build:
+      context: .
+      dockerfile: Dockerfile  # Builds the image from the Dockerfile in the current directory
+    ports:
+      - "8000:8000"
+    networks:
+      - postgres-net
+  
 networks:
   postgres-net:
