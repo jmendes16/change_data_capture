@@ -3,17 +3,28 @@ import psycopg2.extensions
 import select
 import json
 from kafka import KafkaProducer
+from decimal import Decimal
 
 # --- Configuration ---
 KAFKA_TOPIC = 'employees_changes'
-KAFKA_BROKER = 'kafka:9092'
+KAFKA_BROKER = 'kafka:9093'
 DB_CONN_STRING = "dbname='cdc_db' user='engineer' password='engie_pass' host='postgres'"
+
+def json_serializer(obj):
+    """
+    Custom JSON serializer to handle special data types like Decimal.
+    """
+    if isinstance(obj, Decimal):
+        # Convert Decimal objects to strings to preserve precision
+        return str(obj)
+    # For any other type, let the default encoder raise an error
+    raise TypeError(f"Object of type {obj.__class__.__name__} is not JSON serializable")
 
 # --- Kafka Producer Setup ---
 # Handles JSON serialization
 producer = KafkaProducer(
     bootstrap_servers=[KAFKA_BROKER],
-    value_serializer=lambda v: json.dumps(v).encode('utf-8')
+    value_serializer=lambda v: json.dumps(v, default=json_serializer).encode('utf-8')
 )
 
 def fetch_employee_details(cursor, employee_id):

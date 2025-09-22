@@ -3,7 +3,7 @@ from datetime import datetime
 from kafka import KafkaConsumer
 
 # --- Configuration ---
-KAFKA_TOPIC = 'employee_changes'
+KAFKA_TOPIC = 'employees_changes'
 KAFKA_BROKER = 'localhost:9092'
 LOG_FILE = 'employee_changes.log'
 CONSUMER_GROUP_ID = 'log-archiver-group'
